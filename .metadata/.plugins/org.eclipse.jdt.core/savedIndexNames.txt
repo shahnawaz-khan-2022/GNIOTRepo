@@ -1,0 +1,6 @@
+INDEX VERSION 1.134+C:\Users\hi\Desktop\fullstackbackup\.metadata\.plugins\org.eclipse.jdt.core
+1029317505.index
+2643220704.index
+2237788407.index
+3713099675.index
+1865797976.index

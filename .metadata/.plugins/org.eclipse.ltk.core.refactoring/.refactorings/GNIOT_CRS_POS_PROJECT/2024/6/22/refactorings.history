@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring accessors="false" comment="Delete element from project &apos;GNIOT_CRS_POS_PROJECT&apos;&#x0D;&#x0A;- Original project: &apos;GNIOT_CRS_POS_PROJECT&apos;&#x0D;&#x0A;- Original element: &apos;GNIOT_CRS_POS_PROJECT&apos;" description="Delete element" element1="/src&lt;{module-info.java" elements="1" flags="589830" id="org.eclipse.jdt.ui.delete" resources="0" stamp="1717249639351" subPackages="false" version="1.0"/>
+</session>

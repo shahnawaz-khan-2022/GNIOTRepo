@@ -1,0 +1,153 @@
+package com.gniot.crs.dao;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+import com.gniot.crs.bean.Course;
+import com.gniot.crs.bean.Professor;
+
+
+public class AdminDAOImpl implements AdminDAOInterface {
+	 private static final String URL = "jdbc:mysql://localhost:3306/crs_schema";
+	    private static final String USER = "root";
+	    private static final String PASSWORD = "Root@1";
+
+	    static {
+	        try {
+	            Class.forName("com.mysql.cj.jdbc.Driver");
+	        } catch (ClassNotFoundException e) {
+	            e.printStackTrace();
+	        }
+	    }
+
+	    @Override
+	    public void addCourseToCatalog(int courseId, String courseName, String courseCode) {
+	        String sql = "INSERT INTO courses (course_id, course_name, course_code) VALUES (?, ?, ?)";
+	        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+	             PreparedStatement stmt = conn.prepareStatement(sql)) {
+	        	stmt.setInt(1, courseId);
+	            stmt.setString(2, courseName);
+	            stmt.setString(3, courseCode);
+	            stmt.executeUpdate();
+	        } catch (SQLException e) {
+	            e.printStackTrace();
+	        }
+	    }
+
+	    @Override
+	    public void removeCourseFromCatalog(int courseId) {
+	        String sql = "DELETE FROM courses WHERE course_id = ?";
+	        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+	             PreparedStatement stmt = conn.prepareStatement(sql)) {
+	            stmt.setInt(1, courseId);
+	            stmt.executeUpdate();
+	        } catch (SQLException e) {
+	            e.printStackTrace();
+	        }
+	    }
+
+	    @Override
+	   
+	    public void assignCourseToProfessor(int courseId, int professorId) {
+	        String fetchCourseNameSql = "SELECT course_name FROM courses WHERE course_id = ?";
+	        String updateCourseSql = "UPDATE courses SET professor_id = ? WHERE course_id = ?";
+	        
+	        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD)) {
+	            // Fetch the course name
+	            try (PreparedStatement fetchStmt = conn.prepareStatement(fetchCourseNameSql)) {
+	                fetchStmt.setInt(1, courseId);
+	                try (ResultSet rs = fetchStmt.executeQuery()) {
+	                    if (rs.next()) {
+	                        String courseName = rs.getString("course_name");
+	                        System.out.println("Assigning professor to course: " + courseName);  // Debug message
+	                    } else {
+	                        System.out.println("Course not found with id: " + courseId);  // Debug message
+	                        return;  // Exit if course not found
+	                    }
+	                }
+	            }
+	            
+	            // Update the course with the professor_id
+	            try (PreparedStatement updateStmt = conn.prepareStatement(updateCourseSql)) {
+	                updateStmt.setInt(1, professorId);
+	                updateStmt.setInt(2, courseId);
+	                int rowsAffected = updateStmt.executeUpdate();
+	                if (rowsAffected > 0) {
+	                    System.out.println("Professor assigned successfully.");  // Debug message
+	                } else {
+	                    System.out.println("Failed to assign professor.");  // Debug message
+	                }
+	            }
+	        } catch (SQLException e) {
+	            e.printStackTrace();
+	        }
+	    }
+
+
+	    @Override
+	    public void addProfessor(Professor professor) {
+	        String sql = "INSERT INTO professors (name, email, department, Designation, password, Doj, id) VALUES (?, ?, ?, ?, ?, ?, ?)";
+	        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+	             PreparedStatement stmt = conn.prepareStatement(sql)) {
+	            stmt.setString(1, professor.getProfessorName());
+	            stmt.setString(2, professor.getProfessorEmail());
+	            stmt.setString(3, professor.getProfessorDepartment());
+	            stmt.setString(4, professor.getprofessorDesignation());
+	            stmt.setString(5, professor.getProfessorPassword());
+	            stmt.setInt(6, professor.getProfessorDOJ());
+	            stmt.setInt(7, professor.getProfessorId());
+	            stmt.executeUpdate();
+	        } catch (SQLException e) {
+	            e.printStackTrace();
+	        }
+	    }
+
+	    @Override
+	    public void approveStudent(String studentId) {
+	        String sql = "UPDATE students SET approved = TRUE WHERE student_id = ?";
+	        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+	             PreparedStatement stmt = conn.prepareStatement(sql)) {
+	            stmt.setString(1, studentId);
+	            stmt.executeUpdate();
+	        } catch (SQLException e) {
+	            e.printStackTrace();
+	        }
+	    }
+
+	    @Override
+	    public List<String> getPendingStudents() {
+	        List<String> pendingStudents = new ArrayList<>();
+	        String sql = "SELECT student_id FROM students WHERE approved = FALSE";
+	        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+	             Statement stmt = conn.createStatement();
+	             ResultSet rs = stmt.executeQuery(sql)) {
+	            while (rs.next()) {
+	                pendingStudents.add(rs.getString("student_id"));
+	            }
+	        } catch (SQLException e) {
+	            e.printStackTrace();
+	        }
+	        return pendingStudents;
+	    }
+
+	    @Override
+	    public List<Course> getCourseCatalog() {
+	        List<Course> courses = new ArrayList<>();
+	        String sql = "SELECT * FROM courses";
+	        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+	             Statement stmt = conn.createStatement();
+	             ResultSet rs = stmt.executeQuery(sql)) {
+	            while (rs.next()) {
+	                courses.add(new Course(
+	                    rs.getInt("course_id"),
+	                    rs.getString("course_name"),
+	                    rs.getString("course_code"),
+	                    rs.getString("professor")
+	                ));
+	            }
+	        } catch (SQLException e) {
+	            e.printStackTrace();
+	        }
+	        return courses;
+	    }
+
+}

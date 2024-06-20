@@ -1,0 +1,79 @@
+package com.gniot.crs.business;
+
+import java.util.*;
+import java.util.Scanner;
+import com.gniot.crs.dao.ProfessorDAOInterface;
+import com.gniot.crs.dao.ProfessorDAOImpl;
+
+/**
+ * Implementation of ProfessorInterface to handle professor operations.
+ */
+public class ProfessorOperation implements ProfessorInterface {
+    private Scanner scanner = new Scanner(System.in);
+    private ProfessorDAOInterface professorDAO = new ProfessorDAOImpl();
+
+    // ANSI escape codes for color formatting
+    public static final String ANSI_RESET = "\u001B[0m";
+    public static final String ANSI_RED = "\u001B[31m";
+    public static final String ANSI_GREEN = "\u001B[32m";
+
+    @Override
+    public void addGrade() {
+        try {
+            System.out.print("Enter Student ID: ");
+            int studentId = scanner.nextInt();
+            scanner.nextLine(); // Consume newline character
+
+            System.out.print("Enter Course Code: ");
+            String courseCode = scanner.nextLine().trim();
+
+            System.out.print("Enter Grade: ");
+            String grade = scanner.nextLine().trim();
+
+            if (courseCode.isEmpty() || grade.isEmpty()) {
+                System.out.println(ANSI_RED + "Course Code and Grade are required." + ANSI_RESET);
+                return;
+            }
+
+            boolean isGradeAdded = professorDAO.addGrade(studentId, courseCode, grade);
+            if (isGradeAdded) {
+                System.out.println(ANSI_GREEN + "Grade added/updated successfully." + ANSI_RESET);
+            } else {
+                System.out.println(ANSI_RED + "Failed to add/update grade. Please check if the student ID and course code are correct." + ANSI_RESET);
+            }
+        } catch (InputMismatchException e) {
+            System.out.println(ANSI_RED + "Invalid Student ID. Please enter a valid integer." + ANSI_RESET);
+            scanner.next(); // Clear the invalid input
+        } catch (Exception e) {
+            System.out.println(ANSI_RED + "An unexpected error occurred: " + e.getMessage() + ANSI_RESET);
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void viewEnrolledStudents() {
+        try {
+            System.out.print("Enter Course ID to view enrolled students: ");
+            String courseId = scanner.nextLine().trim();
+
+            if (courseId.isEmpty()) {
+                System.out.println(ANSI_RED + "Course ID is required." + ANSI_RESET);
+                return;
+            }
+
+            List<String> enrolledStudents = professorDAO.viewEnrolledStudents(courseId);
+
+            if (enrolledStudents.isEmpty()) {
+                System.out.println(ANSI_RED + "No students are currently enrolled in " + courseId + ANSI_RESET);
+            } else {
+                System.out.println(ANSI_GREEN + "Enrolled Students for Course " + courseId + ":" + ANSI_RESET);
+                for (String studentId : enrolledStudents) {
+                    System.out.println(studentId);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println(ANSI_RED + "Error viewing enrolled students: " + e.getMessage() + ANSI_RESET);
+            e.printStackTrace();
+        }
+    }
+}

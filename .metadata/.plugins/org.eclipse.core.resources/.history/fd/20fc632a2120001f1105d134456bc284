@@ -1,0 +1,194 @@
+package com.gniot.crs.dao;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.gniot.crs.bean.Course;
+import com.gniot.crs.bean.Grade;
+import com.gniot.crs.business.StudentDetails;
+
+public class StudentDAOImpl implements StudentDAOInterface {
+	private static final String DB_URL = "jdbc:mysql://localhost:3306/crs_schema";
+	private static final String DB_USER = "root";
+	private static final String DB_PASSWORD = "Root@1";
+
+	public String errorMessage;
+
+	@Override
+	public List<Course> browseCatalogForCourses() {
+		List<Course> courses = new ArrayList<>();
+		try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+				PreparedStatement pstmt = conn.prepareStatement("SELECT * FROM courses")) {
+
+			try (ResultSet rs = pstmt.executeQuery()) {
+				while (rs.next()) {
+					courses.add(new Course(rs.getInt("course_id"), rs.getString("course_code"),
+							rs.getString("course_name"), rs.getString("professor")));
+				}
+			}
+		} catch (SQLException e) {
+			errorMessage = "Error fetching course catalog: " + e.getMessage();
+			e.printStackTrace(); // Log for debugging
+		}
+		return courses;
+	}
+
+	public void addCourse(int studentId, int courseId) {
+
+		System.out.println(studentId);
+		try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+				PreparedStatement pstmt = conn
+						.prepareStatement("INSERT INTO students (student_id, course_id) VALUES (?, ?)")) {
+
+			pstmt.setInt(1, studentId);
+			pstmt.setInt(2, courseId);
+			pstmt.executeUpdate();
+			System.out.println(studentId);
+
+		} catch (SQLException e) {
+			errorMessage = "Error adding course: " + e.getMessage();
+			e.printStackTrace();
+		}
+	}
+
+	public void removeCourse(int studentId, int courseId) {
+		try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+				PreparedStatement pstmt = conn
+						.prepareStatement("DELETE FROM students WHERE student_id = ? AND course_id = ?")) {
+
+			pstmt.setInt(1, studentId);
+			pstmt.setInt(2, courseId);
+			int rowsAffected = pstmt.executeUpdate();
+
+			if (rowsAffected > 0) {
+				errorMessage = "Course removed successfully.";
+			} else {
+				errorMessage = "No course found for this student and course ID.";
+			}
+		} catch (SQLException e) {
+			errorMessage = "Error removing course: " + e.getMessage();
+			e.printStackTrace();
+		}
+	}
+
+	public List<Grade> viewGrades(int studentId) {
+	    List<Grade> grades = new ArrayList<>();
+	    try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+	         PreparedStatement pstmt = conn.prepareStatement(
+	             "SELECT*FROM grade WHERE student_id = ? AND course_id = ? AND course_name = ? AND grade = ?")) { // Fix the query
+
+	        pstmt.setInt(1, studentId);
+
+	        try (ResultSet rs = pstmt.executeQuery()) {
+	            while (rs.next()) {
+	                grades.add(new Grade(rs.getInt("studentId"),rs.getInt("CourseId"),rs.getString("course_code"), rs.getString("grade")));
+	            }
+	        }
+		} catch (SQLException e) {
+			errorMessage = "Error fetching grades: " + e.getMessage();
+			e.printStackTrace();
+		}
+		return grades;
+	}
+
+	@Override
+    public void changePassword(int studentId, String newPassword) {
+        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+             PreparedStatement pstmt = conn.prepareStatement("UPDATE users SET password = ? WHERE username = (SELECT username FROM users WHERE id = ?)")) {
+
+            pstmt.setString(1, newPassword);
+            pstmt.setInt(2, studentId); 
+
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) {
+                errorMessage = "Password changed successfully.";
+            } else {
+                errorMessage = "Student not found.";
+            }
+        } catch (SQLException e) {
+            errorMessage = "Error changing password: " + e.getMessage();
+            e.printStackTrace();
+        }
+    }
+
+	@Override
+    public List<Course> viewSchedule(int studentId) {
+        List<Course> schedule = new ArrayList<>();
+        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+             PreparedStatement pstmt = conn.prepareStatement(
+                 "SELECT c.* FROM course c " +
+                 "JOIN student_course sc ON c.course_id = sc.course_id " +
+                 "WHERE sc.student_id = ?")) {
+
+            pstmt.setInt(1, studentId);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    schedule.add(new Course(
+                        rs.getInt("course_id"), 
+                        rs.getString("course_code"), 
+                        rs.getString("course_name"),
+                        rs.getString("professor")
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            errorMessage = "Error fetching schedule: " + e.getMessage();
+            e.printStackTrace();
+        }
+        return schedule;
+    }
+	@Override
+	public StudentDetails accountInfo(int studentId) {
+        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+             PreparedStatement pstmt = conn.prepareStatement("SELECT * FROM students WHERE student_id = ?")) {
+
+            pstmt.setInt(1, studentId);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    // Map ResultSet to Student object
+                    return new StudentDetails(
+                        rs.getString("first_name"), 
+                        rs.getString("last_name"),
+                        rs.getString("gender"),
+                        rs.getInt("age"),
+                        rs.getDouble("tenth_percentage"),
+                        rs.getDouble("twelfth_percentage"),
+                        rs.getString("address"),
+                        rs.getString("phone_number"),
+                        rs.getString("email_id")
+                    );
+                } else {
+                    errorMessage = "Student not found.";
+                }
+            }
+        } catch (SQLException e) {
+            errorMessage = "Error fetching account info: " + e.getMessage();
+            e.printStackTrace();
+        }
+        return null; // Indicate student not found
+    }
+	public int currentStudentId(String username) {
+	    int studentId = -1; // Default value if not found
+
+	    try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+	         PreparedStatement pstmt = conn.prepareStatement("SELECT student_id FROM students WHERE username = ?")) {
+	        pstmt.setString(1, username); // Assuming your table has a 'username' column
+	        try (ResultSet rs = pstmt.executeQuery()) {
+	            if (rs.next()) {
+	                studentId = rs.getInt("student_id");
+	            }
+	        }
+	    } catch (SQLException e) {
+	        errorMessage = "Error fetching student ID: " + e.getMessage();
+	        e.printStackTrace();
+	    }
+	    return studentId;
+	}
+}

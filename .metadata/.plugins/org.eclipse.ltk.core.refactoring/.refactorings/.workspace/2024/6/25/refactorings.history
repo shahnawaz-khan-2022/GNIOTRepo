@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Delete resource &apos;GNIOT_CRS_POS_PROJECT&apos;" deleteContents="true" description="Delete resource &apos;GNIOT_CRS_POS_PROJECT&apos;" element1="/GNIOT_CRS_POS_PROJECT" flags="7" id="org.eclipse.ltk.core.refactoring.delete.resources" resources="1" stamp="1718713658970"/>
+</session>
